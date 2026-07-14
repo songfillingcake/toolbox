@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DevKit 本地开发者工具箱：MyBatis、JSON、SQL、Cron、配置互转与调试工具">
+    <meta name="theme-color" content="#09090b">
+    <title>DevKit · 开发者工具箱</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="brand">
+                <div class="brand-icon">DK</div>
+                <div>
+                    <h1>DevKit</h1>
+                    <p>Local-first developer tools</p>
+                </div>
+            </div>
+            <div class="nav-search-wrap">
+                <span class="nav-search-icon"></span>
+                <input id="nav-search" type="search" placeholder="搜索工具…" autocomplete="off">
+                <button id="nav-search-clear" class="nav-search-clear hidden" title="清除">×</button>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <div id="nav-recent" class="nav-recent hidden">
+                <div class="nav-recent-label">最近使用</div>
+                <div id="nav-recent-list" class="nav-recent-list"></div>
+            </div>
+            <div id="nav-pins" class="nav-pins hidden">
+                <div class="nav-recent-label">收藏</div>
+                <div id="nav-pins-list" class="nav-recent-list"></div>
+            </div>
+
+            <div class="nav-scroll" id="nav-scroll">
+                <div class="nav-group" data-group="basic">
+                    <button type="button" class="nav-group-header" aria-expanded="true">
+                        <span class="nav-group-title">基础工具</span>
+                        <span class="nav-group-count">6</span>
+                        <span class="nav-group-chevron">▾</span>
+                    </button>
+                    <div class="nav-group-body">
+                        <button class="nav-item active" data-tab="mybatis"><span class="nav-icon"></span><span class="nav-label">MyBatis → SQL</span></button>
+                        <button class="nav-item" data-tab="sql"><span class="nav-icon"></span><span class="nav-label">SQL 格式化</span></button>
+                        <button class="nav-item" data-tab="cron"><span class="nav-icon"></span><span class="nav-label">Cron 解析</span></button>
+                        <button class="nav-item" data-tab="timestamp"><span class="nav-icon"></span><span class="nav-label">时间戳转换</span></button>
+                        <button class="nav-item" data-tab="uuid"><span class="nav-icon"></span><span class="nav-label">UUID 生成</span></button>
+                        <button class="nav-item" data-tab="textdiff"><span class="nav-icon"></span><span class="nav-label">文本 Diff</span></button>
+                    </div>
+                </div>
+
+                <div class="nav-group" data-group="pro">
+                    <button type="button" class="nav-group-header" aria-expanded="true">
+                        <span class="nav-group-title">Pro 工具</span>
+                        <span class="nav-group-count">8</span>
+                        <span class="nav-group-chevron">▾</span>
+                    </button>
+                    <div class="nav-group-body">
+                        <button class="nav-item" data-tab="json"><span class="nav-icon"></span><span class="nav-label">JSON Pro</span><span class="nav-pro">PRO</span></button>
+                        <button class="nav-item" data-tab="encode"><span class="nav-icon"></span><span class="nav-label">编码 Pro</span><span class="nav-pro">PRO</span></button>
+                        <button class="nav-item" data-tab="redis"><span class="nav-icon"></span><span class="nav-label">Redis Pro</span><span class="nav-pro">PRO</span></button>
+                        <button class="nav-item" data-tab="config"><span class="nav-icon"></span><span class="nav-label">配置互转</span></button>
+                        <button class="nav-item" data-tab="regex"><span class="nav-icon"></span><span class="nav-label">正则测试</span></button>
+                        <button class="nav-item" data-tab="hash"><span class="nav-icon"></span><span class="nav-label">Hash 签名</span></button>
+                        <button class="nav-item" data-tab="jwt"><span class="nav-icon"></span><span class="nav-label">JWT 解码</span></button>
+                        <button class="nav-item" data-tab="dotenv"><span class="nav-icon"></span><span class="nav-label">.env 解析</span></button>
+                    </div>
+                </div>
+
+                <div class="nav-group" data-group="debug">
+                    <button type="button" class="nav-group-header" aria-expanded="true">
+                        <span class="nav-group-title">开发调试</span>
+                        <span class="nav-group-count">6</span>
+                        <span class="nav-group-chevron">▾</span>
+                    </button>
+                    <div class="nav-group-body">
+                        <button class="nav-item" data-tab="explain"><span class="nav-icon"></span><span class="nav-label">EXPLAIN 助手</span></button>
+                        <button class="nav-item" data-tab="log"><span class="nav-icon"></span><span class="nav-label">日志高亮</span></button>
+                        <button class="nav-item" data-tab="jstack"><span class="nav-icon"></span><span class="nav-label">jstack 分析</span></button>
+                        <button class="nav-item" data-tab="maven"><span class="nav-icon"></span><span class="nav-label">Maven 冲突</span></button>
+                        <button class="nav-item" data-tab="mock"><span class="nav-icon"></span><span class="nav-label">Mock 生成</span></button>
+                        <button class="nav-item" data-tab="faker"><span class="nav-icon"></span><span class="nav-label">测试数据</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="nav-empty" class="nav-empty hidden">未找到匹配工具</div>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-actions">
+                <button class="btn ghost btn-sm icon-btn tooltip-host" id="theme-toggle" aria-label="切换主题" data-tooltip="切换主题"></button>
+                <button class="btn ghost btn-sm icon-btn tooltip-host" id="workspace-toggle" aria-label="工作区" data-tooltip="工作区"></button>
+                <button class="btn ghost btn-sm icon-btn tooltip-host" id="nav-collapse-all" aria-label="折叠分组" data-tooltip="折叠分组"></button>
+            </div>
+            <footer class="sidebar-footer">
+                <span>Spring Boot 3 · Java 21 · <a href="/CHANGELOG.md" target="_blank" id="app-version" class="version-link">v1.10.0</a></span>
+            </footer>
+        </div>
+    </aside>
+
+    <main class="content">
+        <div id="sensitive-banner" class="sensitive-banner hidden">
+            <span>敏感模式：禁止网络请求与本地持久化</span>
+            <button type="button" class="btn-xs" id="sensitive-clear-local">清除本地数据</button>
+        </div>
+        <div class="content-top">
+            <button type="button" id="nav-toggle" class="btn ghost btn-sm icon-btn nav-toggle-btn" aria-label="打开菜单"></button>
+            <nav id="breadcrumb" class="breadcrumb">
+                <span class="bc-group">基础工具</span><span class="bc-sep">/</span><span class="bc-current">MyBatis → SQL</span>
+            </nav>
+            <div class="content-top-actions">
+                <span class="kbd-hint hidden-mobile"><kbd>Ctrl</kbd>+<kbd>K</kbd></span>
+                <button type="button" id="share-link-btn" class="btn ghost btn-sm icon-btn tooltip-host" aria-label="复制工具链接" data-tooltip="复制工具链接"></button>
+                <button type="button" id="sensitive-toggle" class="btn ghost btn-sm icon-btn" title="敏感数据模式" aria-label="敏感模式"></button>
+                <button type="button" class="btn ghost btn-sm icon-btn" id="cmd-palette-open" title="命令面板 Ctrl+K" aria-label="命令面板"></button>
+            </div>
+        </div>
+
+        <section class="panel active" id="panel-mybatis" data-tool="mybatis">
+            <header class="panel-header">
+                <h2>MyBatis 日志转可执行 SQL</h2>
+                <p>粘贴 MyBatis 日志中的 Preparing / Parameters，一键生成可直接在数据库执行的 SQL</p>
+            </header>
+            <div class="toolbar">
+                <button class="btn primary" id="mybatis-convert">转换 SQL</button>
+                <button class="btn" id="mybatis-format">格式化结果</button>
+                <button class="btn ghost" id="mybatis-copy">复制 SQL</button>
+                <button class="btn ghost" id="mybatis-export">导出 .sql</button>
+                <button class="btn" id="mybatis-to-explain">→ EXPLAIN</button>
+                <button class="btn ghost history-save" data-tool="mybatis" data-input="mybatis-input">存历史</button>
+                <button class="btn ghost workspace-save" data-tool="mybatis" data-input="mybatis-input">存工作区</button>
+                <button class="btn ghost" id="mybatis-clear">清空</button>
+            </div>
+            <div class="history-panel" data-tool="mybatis" data-target="mybatis-input">
+                <span class="history-label">历史记录</span>
+                <div class="history-list"></div>
+            </div>
+            <div id="mybatis-error" class="tool-error hidden"></div>
+            <div class="editor-grid">
+                <div class="editor-box">
+                    <label>输入 MyBatis 日志</label>
+                    <textarea id="mybatis-input" spellcheck="false" placeholder="粘贴日志..."></textarea>
+                </div>
+                <div class="editor-box">
+                    <label>可执行 SQL <span id="mybatis-count" class="badge">0 条</span></label>
+                    <textarea id="mybatis-output" spellcheck="false" readonly placeholder="转换结果将显示在这里..."></textarea>
+                </div>
+            </div>
+            <div class="tips">
+                <strong>支持：</strong>多组 SQL 批量转换 · String/Date 自动加引号 · null → NULL
+            </div>
+        </section>
+
+        <section class="panel" id="panel-sql" data-tool="sql">
+            <header class="panel-header">
+                <h2>SQL 格式化</h2>
+                <p>压缩或美化 SQL，关键字自动大写</p>
+            </header>
+            <div class="toolbar">
+                <button class="btn primary" id="sql-format">美化 SQL</button>
+                <button class="btn" id="sql-minify">压缩为一行</button>
+                <button class="btn ghost" id="sql-copy">复制</button>
+                <button class="btn ghost history-save" data-tool="sql" data-input="sql-input">存历史</button>
+                <button class="btn ghost workspace-save" data-tool="sql" data-input="sql-input">存工作区</button>
+                <button class="btn ghost" id="sql-clear">清空</button>
+            </div>
+            <div class="history-panel" data-tool="sql" data-target="sql-input">
+                <span class="history-label">历史记录</span>
+                <div class="history-list"></div>
+            </div>
+            <div class="editor-grid">
+                <div class="editor-box">
+                    <label>原始 SQL</label>
+                    <textarea id="sql-input" spellcheck="false"></textarea>
+                </div>
+                <div class="editor-box">
+                    <label>格式化结果</label>
+                    <textarea id="sql-output" spellcheck="false" readonly></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" id="panel-cron" data-tool="cron">
+            <header class="panel-header">
+                <h2>Cron 表达式解析</h2>
+                <p>验证 Cron 并计算未来执行时间（Quartz / Spring 6 字段格式）</p>
+            </header>
+            <div class="cron-form">
+                <div class="field">
+                    <label>Cron 表达式</label>
+                    <input id="cron-input" type="text" value="0 0 2 * * ?">
+                </div>
+                <div class="field">
+                    <label>类型</label>
+                    <select id="cron-type">
+                        <option value="QUARTZ" selected>Quartz (6 字段)</option>
+                        <option value="UNIX">Unix (5 字段)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>次数</label>
+                    <input id="cron-count" type="number" value="10" min="1" max="30">
+                </div>
+                <button class="btn primary" id="cron-parse">解析</button>
+            </div>
+            <div class="cron-presets">
+                <span>快捷：</span>
+                <button class="chip" data-cron="0 0 2 * * ?">每天凌晨2点</button>
+                <button class="chip" data-cron="0 0/5 * * * ?">每5分钟</button>
+                <button class="chip" data-cron="0 0 9 ? * MON-FRI">工作日9点</button>
+            </div>
+            <div id="cron-result" class="result-card hidden">
+                <div id="cron-status" class="status"></div>
+                <ol id="cron-runs" class="run-list"></ol>
+            </div>
+            <div class="cron-gen-section">
+                <h3>Cron 反向生成</h3>
+                <div class="cron-gen-presets" id="cron-gen-presets"></div>
+                <div class="cron-gen-form">
+                    <select id="cron-gen-mode">
+                        <option value="daily">每天固定时间</option>
+                        <option value="interval">每 N 分钟</option>
+                        <option value="weekly">每周</option>
+                        <option value="monthly">每月</option>
+                    </select>
+                    <label>时 <input id="cron-gen-hour" type="number" value="2" min="0" max="23" style="width:60px"></label>
+                    <label>分 <input id="cron-gen-minute" type="number" value="0" min="0" max="59" style="width:60px"></label>
+                    <label>秒 <input id="cron-gen-second" type="number" value="0" min="0" max="59" style="width:60px"></label>
+                    <label>间隔(分) <input id="cron-gen-interval" type="number" value="5" min="1" style="width:60px"></label>
+                    <label>周 <input id="cron-gen-dow" type="text" value="MON-FRI" style="width:80px"></label>
+                    <label>日 <input id="cron-gen-dom" type="number" value="1" min="1" max="31" style="width:60px"></label>
+                    <button class="btn primary" id="cron-gen-build">生成</button>
+                    <button class="btn ghost" id="cron-gen-copy">复制</button>
+                </div>
+                <input id="cron-gen-output" type="text" class="cron-gen-output" readonly placeholder="生成的 Cron 表达式">
+            </div>
+        </section>
+
+        <section class="panel" id="panel-json" data-tool="json">
+            <header class="panel-header">
+                <h2>JSON Pro <span class="pro-tag">PRO</span></h2>
+                <p>参考 json.cn · 树形编辑 / YAML / Java生成 / JSONPath / #data= 传参 · 数据不出浏览器</p>
+            </header>
+
+            <div class="toolbar json-toolbar">
+                <button class="btn primary" id="json-format">格式化</button>
+                <button class="btn" id="json-minify">压缩</button>
+                <button class="btn" id="json-validate">校验</button>
+                <button class="btn" id="json-sort">Key 排序</button>
+                <button class="btn" id="json-unicode">Unicode 解码</button>
+                <button class="btn" id="json-escape">转义</button>
+                <button class="btn" id="json-unescape">去转义</button>
+                <button class="btn" id="json-fullscreen">专注模式</button>
+                <span class="toolbar-divider"></span>
+                <label class="inline-check"><input type="checkbox" id="json-sort-keys"> 排序后输出</label>
+                <label class="inline-check"><input type="checkbox" id="json-keep-escape"> 保留转义</label>
+                <label class="inline-select">缩进
+                    <select id="json-indent"><option value="2" selected>2</option><option value="4">4</option><option value="1">1</option></select>
+                </label>
+                <span class="toolbar-divider"></span>
+                <button class="btn ghost" id="json-copy">复制</button>
+                <button class="btn ghost" id="json-copy-min">复制压缩版</button>
+                <button class="btn ghost" id="json-clear">清空</button>
+            </div>
+
+            <div id="json-subtabs" class="sub-tabs-wrap">
+                <div class="sub-tabs">
+                    <button class="sub-tab active" data-subtab="sub-json-editor">编辑器</button>
+                    <button class="sub-tab" data-subtab="sub-json-diff">Diff 对比</button>
+                    <button class="sub-tab" data-subtab="sub-json-yaml">YAML 互转</button>
+                    <button class="sub-tab" data-subtab="sub-json-java">Java 实体</button>
+                    <button class="sub-tab" data-subtab="sub-json-sql">JSON→SQL</button>
+                    <button class="sub-tab" data-subtab="sub-json-tsgo">TS / Go</button>
+                </div>
+
+                <div id="sub-json-editor" class="sub-panel active">
+                    <div id="json-error" class="json-error hidden"></div>
+                    <div class="json-meta">
+                        <span id="json-status" class="badge">待输入</span>
+                        <span id="json-stats" class="json-stats"></span>
+                        <span class="json-hint">双击树节点值可编辑 · 支持 #data= 传参</span>
+                    </div>
+                    <div class="json-url-bar">
+                        <input id="json-url-input" type="text" placeholder="https://api.example.com/data.json 或 #url= 传参">
+                        <button class="btn" id="json-url-load">从 URL 加载</button>
+                        <button class="btn ghost history-save" data-tool="json">存历史</button>
+                        <button class="btn ghost workspace-save" data-tool="json" data-input="json-input">存工作区</button>
+                    </div>
+                    <div class="history-panel" data-tool="json" data-target="json-input">
+                        <div class="history-list"></div>
+                    </div>
+                    <div class="json-pro-layout" id="json-split-layout">
+                        <div class="json-editor-pane" id="json-pane-left">
+                            <label>JSON 编辑器</label>
+                            <textarea id="json-input" class="json-editor" spellcheck="false"></textarea>
+                            <textarea id="json-output" class="hidden-output" readonly></textarea>
+                        </div>
+                        <div class="json-resizer" id="json-resizer" title="拖拽调整宽度"></div>
+                        <div class="json-tree-pane" id="json-pane-right">
+                            <div class="json-tree-header">
+                                <label>树形视图（可编辑）</label>
+                                <div class="json-tree-actions">
+                                    <button class="btn-xs" id="json-expand-all">全部展开</button>
+                                    <button class="btn-xs" id="json-collapse-all">全部折叠</button>
+                                </div>
+                            </div>
+                            <div id="json-tree" class="json-tree-container"></div>
+                        </div>
+                    </div>
+                    <div class="json-path-bar">
+                        <label>JSONPath</label>
+                        <input id="json-path-input" type="text" value="$" placeholder="$.data.userId">
+                        <button class="btn primary" id="json-path-run">查询</button>
+                        <textarea id="json-path-result" class="json-path-result" readonly placeholder="JSONPath 查询结果"></textarea>
+                    </div>
+                </div>
+
+                <div id="sub-json-diff" class="sub-panel">
+                    <div class="toolbar">
+                        <button class="btn primary" id="json-diff-run">对比</button>
+                        <button class="btn" id="json-diff-swap">左右互换</button>
+                    </div>
+                    <div class="editor-grid">
+                        <div class="editor-box"><label>JSON A（旧）</label><textarea id="json-diff-left" spellcheck="false"></textarea></div>
+                        <div class="editor-box"><label>JSON B（新）</label><textarea id="json-diff-right" spellcheck="false"></textarea></div>
+                    </div>
+                    <div id="json-diff-result" class="diff-result"></div>
+                </div>
+
+                <div id="sub-json-yaml" class="sub-panel">
+                    <div class="yaml-toolbar">
+                        <button class="btn primary" id="json-to-yaml">JSON → YAML</button>
+                        <button class="btn" id="yaml-to-json">YAML → JSON</button>
+                        <button class="btn ghost" id="yaml-copy">复制 YAML</button>
+                    </div>
+                    <textarea id="yaml-io" class="yaml-editor" spellcheck="false" placeholder="YAML 内容，可从 JSON 转换或直接粘贴"></textarea>
+                </div>
+
+                <div id="sub-json-java" class="sub-panel">
+                    <div class="java-gen-form">
+                        <label>类名 <input id="java-class-name" type="text" value="RootBean"></label>
+                        <label>包名 <input id="java-package" type="text" value="com.example.dto" style="width:220px"></label>
+                        <label><input type="checkbox" id="java-lombok" checked> Lombok @Data</label>
+                        <label><input type="checkbox" id="java-jackson" checked> Jackson</label>
+                        <label><input type="checkbox" id="java-schema"> @Schema</label>
+                        <label><input type="checkbox" id="java-record"> Java record</label>
+                        <label><input type="checkbox" id="java-date" checked> 日期类型</label>
+                        <label><input type="checkbox" id="java-bigdecimal"> BigDecimal</label>
+                        <label><input type="checkbox" id="java-nested" checked> 嵌套 static</label>
+                        <button class="btn primary" id="java-gen-run">从 JSON 生成</button>
+                        <button class="btn ghost" id="java-gen-copy">复制代码</button>
+                    </div>
+                    <textarea id="java-gen-output" class="java-output" spellcheck="false" readonly placeholder="Java 实体类代码"></textarea>
+                </div>
+
+                <div id="sub-json-sql" class="sub-panel">
+                    <div class="java-gen-form">
+                        <label>表名 <input id="json-sql-table" type="text" value="your_table"></label>
+                        <button class="btn primary" id="json-sql-run">生成 INSERT</button>
+                        <button class="btn ghost" id="json-sql-copy">复制</button>
+                    </div>
+                    <textarea id="json-sql-output" class="java-output" spellcheck="false" readonly placeholder="INSERT 语句"></textarea>
+                </div>
+
+                <div id="sub-json-tsgo" class="sub-panel">
+                    <div class="java-gen-form">
+                        <label>语言 <select id="tsgo-lang"><option value="ts">TypeScript</option><option value="go">Go</option></select></label>
+                        <label>名称 <input id="tsgo-name" type="text" value="Root"></label>
+                        <button class="btn primary" id="tsgo-gen-run">从 JSON 生成</button>
+                        <button class="btn ghost" id="tsgo-copy">复制</button>
+                    </div>
+                    <textarea id="tsgo-output" class="java-output" spellcheck="false" readonly></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" id="panel-encode" data-tool="encode">
+            <header class="panel-header">
+                <h2>编码 Pro <span class="pro-tag">PRO</span></h2>
+                <p>Base64 · URL 编解码 · JWT 解析（仅解码展示，不验证签名）</p>
+            </header>
+            <div class="toolbar encode-toolbar">
+                <button class="btn ghost btn-load-example encode-example-btn">加载示例</button>
+                <button class="btn" id="encode-to-jwt">→ JWT 解码</button>
+            </div>
+            <div class="encode-grid">
+                <div class="encode-card">
+                    <h3>Base64</h3>
+                    <textarea id="b64-input" spellcheck="false" placeholder="输入文本"></textarea>
+                    <div class="encode-actions">
+                        <button class="btn primary" id="b64-encode">编码</button>
+                        <button class="btn" id="b64-decode">解码</button>
+                        <button class="btn ghost" id="b64-copy">复制结果</button>
+                    </div>
+                    <textarea id="b64-output" spellcheck="false" readonly></textarea>
+                </div>
+                <div class="encode-card">
+                    <h3>URL 编解码</h3>
+                    <textarea id="url-input" spellcheck="false" placeholder="https://example.com?q=中文"></textarea>
+                    <div class="encode-actions">
+                        <button class="btn primary" id="url-encode">编码</button>
+                        <button class="btn" id="url-decode">解码</button>
+                        <button class="btn ghost" id="url-copy">复制结果</button>
+                    </div>
+                    <textarea id="url-output" spellcheck="false" readonly></textarea>
+                </div>
+                <div class="encode-card encode-card-wide">
+                    <h3>JWT 解析</h3>
+                    <textarea id="jwt-input" spellcheck="false" placeholder="粘贴 JWT Token（eyJhbGciOiJIUzI1NiIs...）"></textarea>
+                    <button class="btn primary" id="jwt-parse">解析 JWT</button>
+                    <div id="jwt-exp-info" class="jwt-exp"></div>
+                    <div id="jwt-claims-info" class="jwt-claims"></div>
+                    <div class="jwt-parts">
+                        <div><label>Header</label><textarea id="jwt-header" readonly></textarea></div>
+                        <div><label>Payload</label><textarea id="jwt-payload" readonly></textarea></div>
+                        <div><label>Signature</label><textarea id="jwt-signature" readonly></textarea></div>
+                    </div>
+                    <button class="btn ghost" id="jwt-copy-payload">复制 Payload</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" id="panel-redis" data-tool="redis">
+            <header class="panel-header">
+                <h2>Redis Pro <span class="pro-tag">PRO</span></h2>
+                <p>Redis 命令格式化 · 语法说明 · 危险命令提醒</p>
+            </header>
+            <div class="toolbar">
+                <button class="btn primary" id="redis-format">格式化</button>
+                <button class="btn ghost" id="redis-copy">复制</button>
+                <button class="btn ghost" id="redis-clear">清空</button>
+            </div>
+            <div class="redis-chips">
+                <button class="redis-cmd-chip" data-cmd="GET user:1001">GET</button>
+                <button class="redis-cmd-chip" data-cmd="SET user:1001 tom EX 3600">SET</button>
+                <button class="redis-cmd-chip" data-cmd="HGETALL user:1001">HGETALL</button>
+                <button class="redis-cmd-chip" data-cmd="LPUSH queue:task job1">LPUSH</button>
+                <button class="redis-cmd-chip" data-cmd="SCAN 0 MATCH user:* COUNT 100">SCAN</button>
+                <button class="redis-cmd-chip" data-cmd="TTL user:1001">TTL</button>
+            </div>
+            <div class="editor-grid">
+                <div class="editor-box">
+                    <label>Redis 命令输入</label>
+                    <textarea id="redis-input" spellcheck="false" placeholder="GET mykey&#10;HSET user:1 name tom"></textarea>
+                </div>
+                <div class="editor-box">
+                    <label>格式化 + 说明</label>
+                    <textarea id="redis-output" spellcheck="false" readonly></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" id="panel-config" data-tool="config">
+            <header class="panel-header">
+                <h2>Spring 配置互转</h2>
+                <p>Properties · YAML · JSON 三向转换</p>
+            </header>
+            <div class="toolbar">
+                <label>输入格式 <select id="config-format"><option value="properties">Properties</option><option value="yaml">YAML</option><option value="json">JSON</option></select></label>
+                <label>输出格式 <select id="config-to"><option value="json">JSON</option><option value="yaml">YAML</option><option value="properties">Properties</option></select></label>
+                <button class="btn primary" id="config-convert">转换</button>
+                <button class="btn ghost" id="config-copy">复制结果</button>
+                <button class="btn ghost history-save" data-tool="config" data-input="config-input">存历史</button>
+                <button class="btn ghost workspace-save" data-tool="config" data-input="config-input">存工作区</button>
+            </div>
+            <div class="history-panel" data-tool="config" data-target="config-input">
+                <span class="history-label">历史记录</span>
+                <div class="history-list"></div>
+            </div>
+            <div class="editor-grid">
+                <div class="editor-box"><label>输入</label><textarea id="config-input" spellcheck="false" placeholder="spring.datasource.url=jdbc:mysql://..."></textarea></div>
+                <div class="editor-box"><label>输出</label><textarea id="config-output" spellcheck="false" readonly></textarea></div>
+            </div>
+        </section>
+
+        <section class="panel" id="panel-regex" data-tool="regex">
+            <header class="panel-header">
+                <h2>正则测试器</h2>
+                <p>实时匹配高亮 · 支持 g/i/m/s 标志</p>
+            </header>
+            <div class="regex-form">
+                <input id="regex-pattern" type="text" placeholder="正则表达式" value="\\d+">
+                <label><input type="checkbox" id="regex-flag-g" checked> g</label>
+                <label><input type="checkbox" id="regex-flag-i"> i</label>
+                <label><input type="checkbox" id="regex-flag-m"> m</label>
+                <label><input type="checkbox" id="regex-flag-s"> s</label>
+                <button class="btn primary" id="regex-run">测试</button>
+                <button class="btn ghost workspace-save" data-tool="regex" data-input="regex-text" data-fields="regex-pattern,regex-text,regex-flag-g,regex-flag-i,regex-flag-m,regex-flag-s">存工作区</button>
+            </div>
+            <div class="editor-grid">
+                <div class="editor-box"><label>测试文本</label><textarea id="regex-text" spellcheck="false">orderId=12345 userId=67890</textarea></div>
+                <div class="editor-box"><label>匹配结果</label><pre id="regex-result" class="regex-pre"></pre></div>
+            </div>
+            <div class="log-output-wrap"><label>高亮预览</label><div id="regex-highlight" class="log-output"></div></div>
+        </section>
+
+        <section class="panel" id="panel-hash" data-tool="hash">
+            <header class="panel-header">
+                <h2>Hash / HMAC 签名</h2>
+                <p>MD5 · SHA-256 · SHA-512 · HMAC-SHA256</p>
+            </header>
+            <div class="hash-form">
+                <select id="hash-algo">
+                    <option value="MD5">MD5</option>
+                    <option value="SHA-256" selected>SHA-256</option>
+                    <option value="SHA-384">SHA-384</option>
+                    <option value="SHA-512">SHA-512</option>
+                    <option value="HMAC-SHA256">HMAC-SHA256</option>
+                </select>
+                <input id="hash-key" type="text" placeholder="HMAC 密钥（仅 HMAC 需要）">
+                <button class="btn primary" id="hash-run">计算</button>
+                <button class="btn ghost" id="hash-copy">复制</button>
+            </div>
+            <textarea id="hash-input" spellcheck="false" placeholder="待签名字符串"></textarea>
+            <textarea id="hash-output" class="hash-output" spellcheck="false" readonly placeholder="哈希结果"></textarea>
+        </section>
+
+        <section class="panel" id="panel-jwt" data-tool="jwt">
+            <header class="panel-header">
+                <h2>JWT 解码</h2>
+                <p>解析 Header / Payload / 过期时间（仅解码展示，不验证签名）</p>
+            </header>
+            <div class="toolbar">
+                <button class="btn primary" id="jwt-panel-parse">解析 JWT</button>
+                <button class="btn ghost" id="jwt-panel-copy-payload">复制 Payload</button>
+                <button class="btn ghost" id="jwt-panel-copy-header">复制 Header</button>
+                <button class="btn" id="jwt-panel-to-json">→ JSON Pro</button>
+                <button class="btn ghost" id="jwt-panel-clear">清空</button>
+            </div>
+            <div id="jwt-error" class="tool-error hidden"></div>
+            <textarea id="jwt-panel-input" spellcheck="false" placeholder="粘贴 JWT Token（eyJhbGciOiJIUzI1NiIs...）"></textarea>
+            <div id="jwt-panel-exp" class="jwt-exp"></div>
+            <div id="jwt-panel-claims" class="jwt-claims"></div>
+            <div class="jwt-parts jwt-parts-panel">
+                <div><label>Header</label><textarea id="jwt-panel-header" readonly></textarea></div>
+                <div><label>Payload</label><textarea id="jwt-panel-payload" readonly></textarea></div>
+                <div><label>Signature</label><textarea id="jwt-panel-signature" readonly></textarea></div>
+            </div>
+        </section>
+
+        <section class="panel" id="panel-explain" data-tool="explain">
+            <header class="panel-header">
+                <h2>SQL EXPLAIN 助手</h2>
+                <p>支持 MySQL 8 全列；在截图区 Ctrl+V 粘贴后点击「识别截图」进行 OCR 分析</p>
+            </header>
+            <div id="explain-hint" class="explain-hint hidden"></div>
+            <div class="toolbar">
+                <button class="btn primary" id="explain-run">分析</button>
+                <button class="btn ghost" id="explain-ocr-pick" disabled>识别截图</button>
+                <button class="btn ghost" id="explain-copy-result">复制报告</button>
+                <button class="btn ghost workspace-save" data-tool="explain" data-input="explain-input">存工作区</button>
+            </div>
+            <div id="explain-ocr-status" class="explain-ocr-status hidden"></div>
+            <div id="explain-ocr-image-box" class="explain-ocr-box explain-ocr-paste-zone" tabindex="0" aria-label="EXPLAIN 截图粘贴区，支持 Ctrl+V">
+                <div class="explain-ocr-box-head">
+                    <label>截图粘贴区</label>
+                    <span class="explain-ocr-paste-hint">Ctrl+V 粘贴 · 点击「识别截图」开始识别</span>
+                    <button type="button" class="btn ghost btn-sm" id="explain-ocr-copy-image" disabled>复制图片</button>
+                </div>
+                <div class="explain-ocr-image-frame" id="explain-ocr-paste-target">
+                    <div id="explain-ocr-placeholder" class="explain-ocr-placeholder">在此 Ctrl+V 粘贴 Navicat / DataGrip 的 EXPLAIN 截图</div>
+                    <img id="explain-ocr-image" class="hidden" alt="EXPLAIN 截图预览">
+                </div>
+            </div>
+            <div id="explain-ocr-box" class="explain-ocr-box hidden">
+                <div class="explain-ocr-box-head">
+                    <label for="explain-ocr-align">识别文本（对齐预览）</label>
+                    <button type="button" class="btn ghost btn-sm" id="explain-ocr-copy">复制识别</button>
+                </div>
+                <div id="explain-ocr-align" class="explain-align-view explain-align-view--ocr"></div>
+                <textarea id="explain-ocr-output" class="explain-ocr-raw hidden" spellcheck="false" readonly tabindex="-1" aria-hidden="true"></textarea>
+            </div>
+            <div id="explain-error" class="tool-error hidden"></div>
+            <div class="explain-sheet">
+                <div id="explain-align-view" class="explain-align-view" tabindex="0" aria-label="EXPLAIN 数据对齐预览，可 Ctrl+V 粘贴文本"></div>
+                <textarea id="explain-input" class="explain-input-hidden" spellcheck="false" tabindex="-1" aria-hidden="true"></textarea>
+            </div>
+            <div id="explain-result" class="explain-result"></div>
+        </section>
+
+        <section class="panel" id="panel-log" data-tool="log">
+            <header class="panel-header">
+                <h2>日志高亮</h2>
+                <p>级别染色 · 时间戳 · JSON 片段识别</p>
+            </header>
+            <div class="toolbar">
+                <button class="btn primary" id="log-highlight">高亮</button>
+                <button class="btn" id="log-extract-json">提取 JSON</button>
+                <button class="btn ghost history-save" data-tool="log" data-input="log-input">存历史</button>
+                <button class="btn ghost workspace-save" data-tool="log" data-input="log-input">存工作区</button>
+            </div>
+            <div class="history-panel" data-tool="log" data-target="log-input">
+                <span class="history-label">历史记录</span>
+                <div class="history-list"></div>
+            </div>
+            <div id="log-error" class="tool-error hidden"></div>
+            <textarea id="log-input" spellcheck="false" placeholder="粘贴日志..."></textarea>
+            <div id="log-output" class="log-output"></div>
+            <textarea id="log-json-extract" class="log-json-extract" spellcheck="false" readonly placeholder="提取的 JSON"></textarea>
+        </section>
+
+        <section class="panel" id="panel-jstack" data-tool="jstack">
+            <header class="panel-header">
+                <h2>jstack 线程分析</h2>
+                <p>统计线程状态 · 列出 BLOCKED / WAITING 线程</p>
+            </header>
+            <div class="toolbar">
+                <button class="btn primary" id="jstack-run">分析</button>
+            </div>
+            <div id="jstack-error" class="tool-error hidden"></div>
+            <textarea id="jstack-input" spellcheck="false" placeholder="粘贴 jstack 输出..."></textarea>
+            <div id="jstack-result" class="jstack-result"></div>
+        </section>
+
+        <section class="panel" id="panel-maven" data-tool="maven">
+            <header class="panel-header">
+                <h2>Maven 依赖冲突</h2>
+                <p>粘贴 mvn dependency:tree 输出，检测同 artifact 多版本</p>
+            </header>
+            <div class="toolbar">
+                <button class="btn primary" id="maven-run">检测冲突</button>
+            </div>
+            <div id="maven-error" class="tool-error hidden"></div>
+            <textarea id="maven-input" spellcheck="false" placeholder="粘贴 dependency:tree 输出..."></textarea>
+            <div id="maven-result" class="maven-result"></div>
+        </section>
+
+        <section class="panel" id="panel-mock" data-tool="mock">
+            <header class="panel-header">
+                <h2>Mock Controller 生成</h2>
+                <p>从 JSON Pro 的 JSON 生成 Spring @RestController 骨架</p>
+            </header>
+            <div class="java-gen-form">
+                <label>类名 <input id="mock-class-name" type="text" value="MockController"></label>
+                <label>路径 <input id="mock-base-path" type="text" value="/api/mock" style="width:160px"></label>
+                <button class="btn primary" id="mock-gen-run">从 JSON 生成</button>
+                <button class="btn ghost" id="mock-gen-copy">复制</button>
+            </div>
+            <textarea id="mock-gen-output" class="java-output" spellcheck="false" readonly></textarea>
+        </section>
+
+        <section class="panel" id="panel-timestamp" data-tool="timestamp">
+            <header class="panel-header">
+                <h2>Unix 时间戳转换</h2>
+                <p>秒 / 毫秒时间戳与日期互转</p>
+            </header>
+            <div class="timestamp-grid">
+                <div class="card">
+                    <h3>时间戳 → 日期</h3>
+                    <input id="ts-input" type="text" placeholder="1782662400">
+                    <button class="btn primary block" id="ts-to-date">转换</button>
+                    <div id="ts-date-result" class="mono-result">—</div>
+                </div>
+                <div class="card">
+                    <h3>日期 → 时间戳</h3>
+                    <input id="date-input" type="datetime-local" step="1">
+                    <button class="btn primary block" id="date-to-ts">转换</button>
+                    <div id="date-ts-result" class="mono-result">—</div>
+                </div>
+                <div class="card">
+                    <h3>当前时间</h3>
+                    <button class="btn block" id="ts-now">刷新</button>
+                    <div id="ts-now-result" class="mono-result">—</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" id="panel-uuid" data-tool="uuid">
+            <header class="panel-header">
+                <h2>UUID 批量生成</h2>
+                <p>快速生成测试用 UUID</p>
+            </header>
+            <div class="uuid-form">
+                <label>数量</label>
+                <input id="uuid-count" type="number" value="5" min="1" max="100">
+                <label><input type="checkbox" id="uuid-upper"> 大写</label>
+                <label><input type="checkbox" id="uuid-no-dash"> 无横线</label>
+                <button class="btn primary" id="uuid-gen">生成</button>
+                <button class="btn ghost" id="uuid-copy">复制全部</button>
+            </div>
+            <textarea id="uuid-output" class="uuid-output" spellcheck="false" readonly></textarea>
+        </section>
+
+        <section class="panel" id="panel-textdiff" data-tool="textdiff">
+            <header class="panel-header">
+                <h2>文本 Diff</h2>
+                <p>对比两份配置、SQL 片段或日志文本的行级差异，支持统一/并排视图与同步滚动</p>
+            </header>
+            <div class="toolbar">
+                <button class="btn primary" id="textdiff-run">对比</button>
+                <button class="btn" id="textdiff-view-toggle">并排视图</button>
+                <button class="btn" id="textdiff-swap">左右互换</button>
+                <button class="btn ghost" id="textdiff-copy">复制结果</button>
+                <button class="btn ghost" id="textdiff-export">导出 .patch</button>
+                <button class="btn ghost workspace-save" data-tool="textdiff" data-input="textdiff-left" data-fields="textdiff-left,textdiff-right">存工作区</button>
+                <button class="btn ghost" id="textdiff-clear">清空</button>
+            </div>
+            <div class="editor-grid">
+                <div class="editor-box"><label>原始文本 A</label><textarea id="textdiff-left" spellcheck="false" placeholder="粘贴旧版本…"></textarea></div>
+                <div class="editor-box"><label>新文本 B</label><textarea id="textdiff-right" spellcheck="false" placeholder="粘贴新版本…"></textarea></div>
+            </div>
+            <div class="log-output-wrap"><label>Diff 结果</label><div id="textdiff-result" class="text-diff-result log-output"></div></div>
+        </section>
+
+        <section class="panel" id="panel-dotenv" data-tool="dotenv">
+            <header class="panel-header">
+                <h2>.env 环境变量</h2>
+                <p>双向互转 .env / Properties / YAML / JSON / Shell export，支持敏感项脱敏</p>
+            </header>
+            <div class="toolbar">
+                <label>输入 <select id="dotenv-from"><option value="dotenv">.env</option><option value="properties">Properties</option><option value="yaml">YAML</option><option value="json">JSON</option><option value="shell">Shell export</option></select></label>
+                <label>输出 <select id="dotenv-to"><option value="dotenv">.env</option><option value="properties">Properties</option><option value="yaml">YAML</option><option value="json">JSON</option><option value="shell">Shell export</option></select></label>
+                <label><input type="checkbox" id="dotenv-mask"> 敏感项脱敏</label>
+                <button class="btn primary" id="dotenv-convert">转换</button>
+                <button class="btn ghost" id="dotenv-copy">复制结果</button>
+                <button class="btn ghost" id="dotenv-export">导出文件</button>
+                <button class="btn" id="dotenv-to-config">→ 配置互转</button>
+                <button class="btn ghost workspace-save" data-tool="dotenv" data-input="dotenv-input">存工作区</button>
+                <button class="btn ghost history-save" data-tool="dotenv" data-input="dotenv-input">存历史</button>
+                <button class="btn ghost" id="dotenv-clear">清空</button>
+                <span id="dotenv-count" class="badge">0 项</span>
+            </div>
+            <div id="dotenv-errors" class="tool-error hidden"></div>
+            <div class="history-panel" data-tool="dotenv" data-target="dotenv-input">
+                <span class="history-label">历史记录</span>
+                <div class="history-list"></div>
+            </div>
+            <div class="editor-grid">
+                <div class="editor-box"><label>.env 输入</label><textarea id="dotenv-input" spellcheck="false" placeholder="DB_HOST=127.0.0.1&#10;DB_PASSWORD=secret"></textarea></div>
+                <div class="editor-box"><label>输出</label><textarea id="dotenv-output" spellcheck="false" readonly></textarea></div>
+            </div>
+        </section>
+
+        <section class="panel" id="panel-faker" data-tool="faker">
+            <header class="panel-header">
+                <h2>测试数据生成</h2>
+                <p>批量生成用户 / 订单 / 商品 / 直播 / 礼物 JSON，可复现种子，一键跳转 JSON Pro 或 Mock</p>
+            </header>
+            <div class="toolbar">
+                <label>类型 <select id="faker-type"><option value="user">用户</option><option value="order">订单</option><option value="product">商品</option><option value="live">直播间</option><option value="gift">礼物</option></select></label>
+                <label>数量 <input id="faker-count" type="number" value="10" min="1" max="200" style="width:72px"></label>
+                <label>种子 <input id="faker-seed" type="text" placeholder="可选，如 42" style="width:88px"></label>
+                <button class="btn primary" id="faker-gen">生成</button>
+                <button class="btn ghost" id="faker-copy">复制 JSON</button>
+                <button class="btn ghost" id="faker-export">导出 .json</button>
+                <button class="btn" id="faker-to-json">→ JSON Pro</button>
+                <button class="btn" id="faker-to-mock">→ Mock 生成</button>
+            </div>
+            <textarea id="faker-output" spellcheck="false" readonly placeholder="生成的 JSON 数组…"></textarea>
+        </section>
+    </main>
+</div>
+
+<div id="nav-backdrop" class="nav-backdrop hidden"></div>
+<div id="toast" class="toast"></div>
+<div id="focus-exit" class="focus-exit hidden">按 Esc 或点击此处退出专注模式</div>
+<div id="workspace-drawer" class="workspace-drawer">
+    <div class="workspace-header">
+        <h3>工作区</h3>
+        <div class="workspace-header-actions">
+            <button class="btn-xs" id="workspace-export">导出</button>
+            <label class="btn-xs workspace-import-label">导入<input type="file" id="workspace-import" accept=".json,application/json" hidden></label>
+            <button class="btn-xs" id="workspace-close">关闭</button>
+        </div>
+    </div>
+    <div id="workspace-list"></div>
+</div>
+<div id="command-palette" class="command-palette hidden">
+    <div class="cmd-backdrop"></div>
+    <div class="cmd-box">
+        <input class="cmd-input" type="text" placeholder="搜索工具或操作… (Ctrl+K)" autocomplete="off">
+        <div class="cmd-list"></div>
+        <div class="cmd-footer">↑↓ 选择 · Enter 执行 · Esc 关闭</div>
+    </div>
+</div>
+<script defer src="/js/devkit-core.js"></script>
+<script defer src="/js/examples.js"></script>
+<script defer src="/js/icons.js"></script>
+<script defer src="/js/pro-common.js"></script>
+<script defer src="/js/nav.js"></script>
+<script defer src="/js/mybatis-sql.js"></script>
+<script defer src="/js/sql-format.js"></script>
+<script defer src="/js/yaml-util.js"></script>
+<script defer src="/js/java-gen.js"></script>
+<script defer src="/js/json-diff.js"></script>
+<script defer src="/js/json-pro.js"></script>
+<script defer src="/js/json-sql.js"></script>
+<script defer src="/js/encode-pro.js"></script>
+<script defer src="/js/redis-pro.js"></script>
+<script defer src="/js/config-convert.js"></script>
+<script defer src="/js/regex-pro.js"></script>
+<script defer src="/js/hash-pro.js"></script>
+<script defer src="/js/jwt-pro.js"></script>
+<script defer src="/js/explain-pro.js"></script>
+<script defer src="/vendor/tesseract/tesseract.min.js"></script>
+<script defer src="/js/explain-ocr.js"></script>
+<script defer src="/js/log-pro.js"></script>
+<script defer src="/js/jstack-pro.js"></script>
+<script defer src="/js/maven-pro.js"></script>
+<script defer src="/js/mock-gen.js"></script>
+<script defer src="/js/cron-gen.js"></script>
+<script defer src="/js/tsgo-gen.js"></script>
+<script defer src="/js/text-diff.js"></script>
+<script defer src="/js/dotenv-pro.js"></script>
+<script defer src="/js/fake-data.js"></script>
+<script defer src="/js/cron-client.js"></script>
+<script defer src="/js/command-palette.js"></script>
+<script defer src="/js/empty-states.js"></script>
+<script defer src="/js/tools.js"></script>
+<script defer src="/js/app.js"></script>
+</body>
+</html>
