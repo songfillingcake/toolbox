@@ -108,6 +108,25 @@ SIMPLE show_users NULL ref roomnumber roomnumber 4 const 6 100.00 NULL`;
     expect(r.rows[0].extra).toBe('NULL');
   });
 
+  it('resolves fragmented OCR lines via glued fallback', () => {
+    const ocr = `id select_type table partitions type
+1 SIMPLE show_users NULL ref roomnumber roomnumber 4 const 6 100.00 NULL`;
+    const resolved = ExplainPro.resolveOcrTabular(ocr);
+    expect(resolved.rows.length).toBe(1);
+    expect(resolved.rows[0].table).toBe('show_users');
+    expect(resolved.rows[0].type).toBe('ref');
+  });
+
+  it('dedupes repeated OCR rows', () => {
+    const ocr = `1 SIMPLE show_users NULL ref roomnumber roomnumber 4 const 6 100.00 NULL
+1 SIMPLE show_users NULL REF roomnumber roomnumber 4 const 6 100.00 NULL
+1 SIMPLE show_users NULL ref roomnumber roomnumber 4 const 6 100.80 NULL`;
+    const rows = ExplainPro.dedupeRows(ExplainPro.extractRowsFromOcrText(ocr));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].table).toBe('show_users');
+    expect(rows[0].filtered).toBe('100.00');
+  });
+
   it('appends NULL Extra when OCR drops trailing (Null)', () => {
     const ocr = '1 SIMPLE show_users NULL ref roomnumber roomnumber 4 const 6 100.00';
     const r = ExplainPro.analyzeFromOcr(ocr);

@@ -103,20 +103,65 @@ const ExplainOcr = (() => {
         return lum < 200 ? 0 : 255;
     }
 
-    function renderImage(img, mode, crop) {
-        const targetW = Math.max(1400, Math.round(img.width * (img.width < 700 ? 3 : img.width < 1200 ? 2 : 1.5)));
-        const scale = targetW / img.width;
+    function detectContentBounds(img) {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const { data, width, height } = ctx.getImageData(0, 0, img.width, img.height);
+        let minX = width;
+        let minY = height;
+        let maxX = 0;
+        let maxY = 0;
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const i = (y * width + x) * 4;
+                const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                if (lum < 238) {
+                    minX = Math.min(minX, x);
+                    minY = Math.min(minY, y);
+                    maxX = Math.max(maxX, x);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+        if (maxX <= minX || maxY <= minY) return null;
+        const pad = Math.max(2, Math.round(Math.min(width, height) * 0.01));
+        return {
+            x: Math.max(0, minX - pad),
+            y: Math.max(0, minY - pad),
+            w: Math.min(width - Math.max(0, minX - pad), maxX - minX + 1 + pad * 2),
+            h: Math.min(height - Math.max(0, minY - pad), maxY - minY + 1 + pad * 2)
+        };
+    }
+
+    function renderImage(img, mode, crop, bounds) {
+        let srcX = 0;
+        let srcY = 0;
+        let srcW = img.width;
+        let srcH = img.height;
+        const boundsRect = bounds === undefined ? detectContentBounds(img) : bounds;
+        if (boundsRect) {
+            srcX = boundsRect.x;
+            srcY = boundsRect.y;
+            srcW = boundsRect.w;
+            srcH = boundsRect.h;
+        }
+        if (crop) {
+            srcY = srcY + srcH * crop.y0;
+            srcH = Math.max(1, srcH * (crop.y1 - crop.y0));
+        }
+        const targetW = Math.max(1600, Math.round(srcW * (srcW < 600 ? 4 : srcW < 1000 ? 3 : 2)));
         const w = targetW;
-        const srcY0 = crop ? img.height * crop.y0 : 0;
-        const srcH = crop ? img.height * (crop.y1 - crop.y0) : img.height;
-        const h = Math.max(1, Math.round(srcH * scale));
+        const h = Math.max(1, Math.round(srcH * (targetW / srcW)));
         const canvas = document.createElement('canvas');
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(img, 0, srcY0, img.width, srcH, 0, 0, w, h);
+        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, w, h);
 
         if (mode === 'raw') {
             return canvas.toDataURL('image/png');
@@ -134,11 +179,13 @@ const ExplainOcr = (() => {
 
     async function buildPreprocessVariants(dataUrl) {
         const img = await loadImage(dataUrl);
+        const bounds = detectContentBounds(img);
         const variants = [
+            { tag: 'crop-normalize', dataUrl: renderImage(img, 'normalize', null, bounds) },
+            { tag: 'crop-soft', dataUrl: renderImage(img, 'soft', null, bounds) },
+            { tag: 'crop-raw', dataUrl: renderImage(img, 'raw', null, bounds) },
             { tag: 'normalize', dataUrl: renderImage(img, 'normalize') },
-            { tag: 'soft', dataUrl: renderImage(img, 'soft') },
-            { tag: 'raw', dataUrl: renderImage(img, 'raw') },
-            { tag: 'body', dataUrl: renderImage(img, 'normalize', { y0: 0.22, y1: 1 }) }
+            { tag: 'body', dataUrl: renderImage(img, 'normalize', { y0: 0.18, y1: 1 }, bounds) }
         ];
         return variants;
     }
@@ -161,17 +208,38 @@ const ExplainOcr = (() => {
     }
 
     function mergeOcrTexts(texts) {
-        const parts = [];
-        const seen = new Set();
+        const dataLines = new Map();
         texts.forEach(text => {
             String(text || '').split(/\r?\n/).forEach(line => {
                 const trimmed = line.trim();
-                if (!trimmed || seen.has(trimmed)) return;
-                seen.add(trimmed);
-                parts.push(trimmed);
+                if (!trimmed) return;
+                if (/^id\b/i.test(trimmed) && /select_type/i.test(trimmed)) return;
+                if (!/^\d+\s+SIMPLE\b/i.test(trimmed) && !/^l\s+SIMPLE\b/i.test(trimmed)) return;
+                const key = trimmed
+                    .toLowerCase()
+                    .replace(/\(\s*null\s*\)/gi, 'null')
+                    .replace(/\bnull\b/g, 'null')
+                    .replace(/\bref\b/g, 'ref')
+                    .replace(/\s+/g, ' ');
+                const prev = dataLines.get(key);
+                if (!prev || trimmed.length > prev.length) dataLines.set(key, trimmed);
             });
         });
-        return parts.join('\n');
+        if (!dataLines.size) {
+            const parts = [];
+            const seen = new Set();
+            texts.forEach(text => {
+                String(text || '').split(/\r?\n/).forEach(line => {
+                    const trimmed = line.trim();
+                    if (!trimmed || seen.has(trimmed)) return;
+                    seen.add(trimmed);
+                    parts.push(trimmed);
+                });
+            });
+            return parts.join('\n');
+        }
+        const header = 'id select_type table partitions type possible_keys key key_len ref rows filtered Extra';
+        return header + '\n' + [...dataLines.values()].join('\n');
     }
 
     function preprocessImage(dataUrl) {
@@ -194,7 +262,7 @@ const ExplainOcr = (() => {
             ? fileOrDataUrl
             : await readFileAsDataUrl(fileOrDataUrl);
         const variants = await buildPreprocessVariants(dataUrl);
-        const psms = ['11', '6', '3'];
+        const psms = ['11', '6', '4', '3'];
         const total = variants.length * psms.length;
         let step = 0;
         let bestText = '';
@@ -226,13 +294,11 @@ const ExplainOcr = (() => {
                 }
             }
 
-            if (bestScore < 12) {
-                const merged = mergeOcrTexts(collected);
-                const mergedScore = scoreOcrExplainText(merged);
-                if (mergedScore > bestScore) {
-                    bestScore = mergedScore;
-                    bestText = merged;
-                }
+            const merged = mergeOcrTexts(collected);
+            const mergedScore = scoreOcrExplainText(merged);
+            if (merged.trim() && (mergedScore > bestScore || !/\bSIMPLE\b/i.test(bestText))) {
+                bestScore = mergedScore;
+                bestText = merged;
             }
         } finally {
             await worker.terminate();
@@ -328,14 +394,10 @@ function initExplainOcr() {
     }
 
     function setOcrBox(rebuilt, rawText) {
-        const rebuiltTrim = (rebuilt || '').trim();
-        const rawTrim = (rawText || '').trim();
-        const hasData = /\d+\s+SIMPLE\b/i.test(rebuiltTrim)
-            || /^l\s+SIMPLE\b/im.test(rebuiltTrim)
-            || rebuiltTrim.split('\n').filter(Boolean).length > 1
-            || ExplainPro.extractRowsFromOcrText(rawTrim).length > 0;
-        const tsv = hasData ? rebuiltTrim : '';
-        const displayText = tsv || rawTrim || rebuiltTrim;
+        const resolved = ExplainPro.resolveOcrTabular(rawText || rebuilt || '');
+        const tsv = (resolved.tsv || rebuilt || '').trim();
+        const hasData = resolved.rows.length > 0;
+        const displayText = tsv || (rawText || '').trim();
         lastOcrText = displayText;
         if (!ocrBox) return;
         if (!displayText) {
@@ -346,7 +408,9 @@ function initExplainOcr() {
         }
         if (ocrOutput) ocrOutput.value = tsv || displayText;
         if (ocrAlign) {
-            ocrAlign.innerHTML = ExplainPro.renderAlignGrid(tsv || displayText, { compact: true });
+            ocrAlign.innerHTML = hasData
+                ? ExplainPro.renderAlignGrid(tsv, { compact: true })
+                : ExplainPro.renderAlignGrid(displayText, { compact: true });
         }
         ocrBox.classList.remove('hidden');
     }
@@ -380,10 +444,11 @@ function initExplainOcr() {
     }
 
     async function applyOcrResult(ocrText) {
-        const rebuilt = ExplainPro.rebuildTabularText(ocrText);
+        const resolved = ExplainPro.resolveOcrTabular(ocrText);
+        const rebuilt = resolved.tsv || ExplainPro.rebuildTabularText(ocrText);
         setOcrBox(rebuilt, ocrText);
-        const hasData = /\d+\s+SIMPLE\b/i.test(rebuilt) || ExplainPro.extractRowsFromOcrText(ocrText).length > 0;
-        if (hasData && rebuilt.trim()) {
+
+        if (resolved.rows.length && rebuilt.trim()) {
             input.value = rebuilt;
             if (typeof globalThis.syncExplainAlignView === 'function') {
                 globalThis.syncExplainAlignView();

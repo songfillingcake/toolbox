@@ -7,13 +7,13 @@ const ExplainPro = (() => {
     const WARN_TYPES = ['index'];
     const DISPLAY_COLS = [
         { key: 'id', label: 'id', gridWidth: '36px', sticky: 1 },
-        { key: 'selectType', label: 'select_type', gridWidth: '80px', sticky: 2 },
+        { key: 'selectType', label: 'select_type', gridWidth: '88px', sticky: 2 },
         { key: 'table', label: 'table', gridWidth: '96px', sticky: 3 },
-        { key: 'partitions', label: 'partitions', gridWidth: '72px' },
+        { key: 'partitions', label: 'partitions', gridWidth: '80px' },
         { key: 'type', label: 'type', gridWidth: '52px' },
         { key: 'possibleKeys', label: 'possible_keys', gridWidth: '100px' },
         { key: 'key', label: 'key', gridWidth: '100px' },
-        { key: 'keyLen', label: 'key_len', gridWidth: '60px' },
+        { key: 'keyLen', label: 'key_len', gridWidth: '64px' },
         { key: 'ref', label: 'ref', gridWidth: '56px' },
         { key: 'rows', label: 'rows', gridWidth: '48px' },
         { key: 'filtered', label: 'filtered', gridWidth: '68px' },
@@ -102,7 +102,8 @@ const ExplainPro = (() => {
     function normalizeOcrText(raw) {
         let t = String(raw || '').replace(/\r/g, '');
         t = t.replace(/[\u00a0\u2000-\u200b\u3000]/g, ' ');
-        t = t.replace(/\(\s*n[uU][l1I|][l1I|]?\s*[\)\]}]?\s*/g, 'NULL ');
+        t = t.replace(/\(\s*null\s*\)/gi, 'NULL');
+        t = t.replace(/\(\s*NULL\s*[}\])]/gi, 'NULL');
         t = t.replace(/\bnull\b/gi, 'NULL');
         t = t.replace(/^l\s+((?:SIMPLE|PRIMARY|SUBQUERY|DERIVED|UNION))/im, '1 $1');
         t = t.replace(/\bl(\d{2}\.\d{2})\b/g, '1$1');
@@ -245,6 +246,42 @@ const ExplainPro = (() => {
         return true;
     }
 
+    function rowFingerprint(row) {
+        return DISPLAY_COLS.map(c => {
+            let v = String(row[c.key] ?? '').trim().toLowerCase();
+            if (isNullish(v)) v = 'null';
+            if (c.key === 'type') v = fixAccessTypeTypo(v).toLowerCase();
+            return v;
+        }).join('|');
+    }
+
+    function rowCompleteness(row) {
+        return DISPLAY_COLS.filter(c => {
+            const v = row[c.key];
+            return v && v !== '-' && !isNullish(v);
+        }).length;
+    }
+
+    function dedupeRows(rows) {
+        const map = new Map();
+        (rows || []).forEach(row => {
+            if (!row || !isValidDataRow(row)) return;
+            const fp = rowFingerprint(row);
+            const prev = map.get(fp);
+            if (!prev || rowCompleteness(row) > rowCompleteness(prev)) {
+                map.set(fp, row);
+            }
+        });
+        return [...map.values()];
+    }
+
+    function pushUniqueRow(rows, row) {
+        if (!row || !isValidDataRow(row)) return;
+        const fp = rowFingerprint(row);
+        if (rows.some(r => rowFingerprint(r) === fp)) return;
+        rows.push(row);
+    }
+
     function extractRowsFromOcrText(raw) {
         const text = normalizeOcrText(raw);
         const merged = mergeOcrLines(text.split('\n').map(l => l.trim()).filter(Boolean));
@@ -254,15 +291,14 @@ const ExplainPro = (() => {
             if (isHeaderLine(line)) return;
             if (HEADER_WORDS.has(line.toLowerCase())) return;
             if (!isDataRowLine(line)) return;
-            const row = parseOcrDataRow(line);
-            if (row) rows.push(row);
+            pushUniqueRow(rows, parseOcrDataRow(line));
         });
 
-        if (rows.length) return rows;
+        if (rows.length) return dedupeRows(rows);
 
         const flat = text.replace(/\s+/g, ' ');
         const re = new RegExp(
-            '(\\d+)\\s+(' + SELECT_TYPE_RE + ')\\s+(\\S+(?:_\\S+)?)\\s+(\\S+)\\s+(\\S+)\\s+(\\S*)\\s+(\\S*)\\s+(\\S*)\\s+(\\S*)\\s+([\\d\\[\\]{}]+)\\s+([\\d.]+)(?:\\s+(\\S*))?',
+            '(\\d+|l)\\s+(' + SELECT_TYPE_RE + ')\\s+(\\S+(?:[\\s_]\\S+)?)\\s+(\\S+)\\s+(\\S+)\\s+(\\S*)\\s+(\\S*)\\s+(\\S*)\\s+(\\S*)\\s+([\\d\\[\\]{}lLbBgGoO]+)\\s+([\\d.]+)(?:\\s+(\\S*))?',
             'gi'
         );
         let m;
@@ -272,10 +308,9 @@ const ExplainPro = (() => {
                 const v = m[i];
                 vals.push(v === undefined || v === '' ? 'NULL' : v);
             }
-            const row = mapRowFixed(repairOcrDataTokens(vals), FIXED_KEYS);
-            if (isValidDataRow(row)) rows.push(row);
+            pushUniqueRow(rows, mapRowFixed(repairOcrDataTokens(vals), FIXED_KEYS));
         }
-        return rows;
+        return dedupeRows(rows);
     }
 
     function rowsToTabular(rows) {
@@ -362,6 +397,11 @@ const ExplainPro = (() => {
             const rows = extractRowsFromOcrText(raw);
             if (rows.length) return rowsToTabular(rows);
         }
+        if (out.length > 1) {
+            const parsed = parse(out.join('\n'));
+            const rows = dedupeRows(parsed.rows || []);
+            if (rows.length) return rowsToTabular(rows);
+        }
         return out.join('\n');
     }
 
@@ -372,21 +412,40 @@ const ExplainPro = (() => {
         return { ...parsed, ocrText: rebuilt };
     }
 
-    function analyzeFromOcr(rawText) {
+    function resolveOcrTabular(rawText) {
         let rebuilt = rebuildTabularText(rawText);
         if (rebuilt.trim()) {
-            const result = analyze(rebuilt);
-            if (!result.error) return result;
+            const parsed = parse(rebuilt);
+            const rows = dedupeRows(parsed.rows || []);
+            if (rows.length) {
+                return { tsv: rowsToTabular(rows), rows };
+            }
         }
 
-        const rows = extractRowsFromOcrText(rawText);
+        let rows = dedupeRows(extractRowsFromOcrText(rawText));
         if (rows.length) {
-            rebuilt = rowsToTabular(rows);
-            const result = analyze(rebuilt);
+            return { tsv: rowsToTabular(rows), rows };
+        }
+
+        const glued = normalizeOcrText(rawText).replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+        if (glued && glued !== rawText) {
+            rows = dedupeRows(extractRowsFromOcrText(glued));
+            if (rows.length) {
+                return { tsv: rowsToTabular(rows), rows };
+            }
+        }
+
+        return { tsv: rebuilt || '', rows: [] };
+    }
+
+    function analyzeFromOcr(rawText) {
+        const resolved = resolveOcrTabular(rawText);
+        if (resolved.rows.length) {
+            const result = analyze(resolved.tsv);
             if (!result.error) return result;
         }
 
-        if (!rebuilt.trim()) {
+        if (!String(rawText || '').trim()) {
             return {
                 rows: [], issues: [], tips: [],
                 error: '未能从截图识别出 EXPLAIN 数据',
@@ -458,15 +517,14 @@ const ExplainPro = (() => {
             const line = lines[i];
             if (isHeaderLine(line)) continue;
             if (HEADER_WORDS.has(line.trim().toLowerCase())) continue;
-            const row = parseDataLine(line, layoutHint);
-            if (row) rows.push(row);
+            pushUniqueRow(rows, parseDataLine(line, layoutHint));
         }
 
         if (rows.length === 0 && /SIMPLE|PRIMARY|SUBQUERY/i.test(text)) {
-            extractRowsFromOcrText(text).forEach(r => rows.push(r));
+            extractRowsFromOcrText(text).forEach(r => pushUniqueRow(rows, r));
         }
 
-        return { rows, headerFound: start > 0 };
+        return { rows: dedupeRows(rows), headerFound: start > 0 };
     }
 
     function diagnose(rows) {
@@ -653,14 +711,14 @@ const ExplainPro = (() => {
         const header = getFixedColumnLabels();
         if (!trimmed) return { header, rows: [] };
 
+        const resolved = resolveOcrTabular(trimmed);
+        if (resolved.rows.length) {
+            return { header, rows: resolved.rows.map(rowObjectToValues) };
+        }
+
         const parsed = parse(trimmed);
         if (parsed.rows && parsed.rows.length) {
             return { header, rows: parsed.rows.map(rowObjectToValues) };
-        }
-
-        const ocrRows = extractRowsFromOcrText(trimmed);
-        if (ocrRows.length) {
-            return { header, rows: ocrRows.map(rowObjectToValues) };
         }
 
         return { header, rows: [] };
@@ -708,8 +766,8 @@ const ExplainPro = (() => {
         analyze, renderHtml, toPlainText, parse, diagnose,
         getFixedColumnLabels, getGridTemplateColumns, renderFixedColumnBar,
         textToAlignRows, renderAlignGrid, syncExplainAlignView,
-        normalizeOcrText, rebuildTabularText, parseFromOcr, analyzeFromOcr,
-        extractRowsFromOcrText, rowsToTabular
+        normalizeOcrText, rebuildTabularText, parseFromOcr, analyzeFromOcr, resolveOcrTabular,
+        extractRowsFromOcrText, rowsToTabular, dedupeRows
     };
 })();
 
