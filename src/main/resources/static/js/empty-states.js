@@ -27,7 +27,8 @@ const EmptyStates = (() => {
         { id: 'json-diff-result', icon: 'json', title: 'Diff 结果', desc: '输入两份 JSON 后点击「对比」' },
         { id: 'log-output', icon: 'log', title: '高亮预览', desc: '粘贴日志后点击「高亮」' },
         { id: 'regex-highlight', icon: 'regex', title: '匹配预览', desc: '输入正则和文本后测试' },
-        { id: 'textdiff-result', icon: 'textdiff', title: 'Diff 结果', desc: '输入两份文本后点击「对比」' }
+        { id: 'textdiff-result', icon: 'textdiff', title: 'Diff 结果', desc: '输入两份文本后点击「对比」' },
+        { id: 'linechart-canvas-wrap', icon: 'linechart', title: '等待数据', desc: '输入 CSV / JSON 后点击「生成图表」' }
     ];
 
     const watches = [];

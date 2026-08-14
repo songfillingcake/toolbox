@@ -41,7 +41,7 @@
                 <div class="nav-group" data-group="basic">
                     <button type="button" class="nav-group-header" aria-expanded="true">
                         <span class="nav-group-title">基础工具</span>
-                        <span class="nav-group-count">6</span>
+                        <span class="nav-group-count">7</span>
                         <span class="nav-group-chevron">▾</span>
                     </button>
                     <div class="nav-group-body">
@@ -51,6 +51,7 @@
                         <button class="nav-item" data-tab="timestamp"><span class="nav-icon"></span><span class="nav-label">时间戳转换</span></button>
                         <button class="nav-item" data-tab="uuid"><span class="nav-icon"></span><span class="nav-label">UUID 生成</span></button>
                         <button class="nav-item" data-tab="textdiff"><span class="nav-icon"></span><span class="nav-label">文本 Diff</span></button>
+                        <button class="nav-item" data-tab="linechart"><span class="nav-icon"></span><span class="nav-label">折线图</span></button>
                     </div>
                 </div>
 
@@ -708,6 +709,26 @@
             <div class="log-output-wrap"><label>Diff 结果</label><div id="textdiff-result" class="text-diff-result log-output"></div></div>
         </section>
 
+        <section class="panel" id="panel-linechart" data-tool="linechart">
+            <header class="panel-header">
+                <h2>折线图</h2>
+                <p>从 CSV 或 JSON 数据生成折线图，支持多系列对比与 PNG 导出</p>
+            </header>
+            <div class="toolbar">
+                <label>格式 <select id="linechart-format"><option value="auto">自动识别</option><option value="csv">CSV</option><option value="json">JSON</option></select></label>
+                <button class="btn primary" id="linechart-render">生成图表</button>
+                <button class="btn ghost" id="linechart-export">导出 PNG</button>
+                <button class="btn" id="linechart-to-json">→ JSON Pro</button>
+                <button class="btn ghost workspace-save" data-tool="linechart" data-input="linechart-input">存工作区</button>
+                <button class="btn ghost" id="linechart-clear">清空</button>
+            </div>
+            <div id="linechart-error" class="tool-error hidden"></div>
+            <div class="editor-grid">
+                <div class="editor-box"><label>数据输入</label><textarea id="linechart-input" spellcheck="false" placeholder="CSV: date,value,series&#10;2026-01-01,10,A&#10;2026-01-02,15,A&#10;&#10;或 JSON: [{&quot;x&quot;:&quot;2026-01-01&quot;,&quot;y&quot;:10,&quot;series&quot;:&quot;A&quot;}]"></textarea></div>
+                <div class="editor-box linechart-preview-box"><label>图表预览</label><div id="linechart-canvas-wrap" class="linechart-canvas-wrap"></div></div>
+            </div>
+        </section>
+
         <section class="panel" id="panel-dotenv" data-tool="dotenv">
             <header class="panel-header">
                 <h2>.env 环境变量</h2>
@@ -807,6 +828,7 @@
 <script defer src="/js/cron-gen.js"></script>
 <script defer src="/js/tsgo-gen.js"></script>
 <script defer src="/js/text-diff.js"></script>
+<script defer src="/js/line-chart.js"></script>
 <script defer src="/js/dotenv-pro.js"></script>
 <script defer src="/js/fake-data.js"></script>
 <script defer src="/js/cron-client.js"></script>

@@ -61,6 +61,8 @@ logging.level.com.bmt=DEBUG`,
 
         textdiff: 'spring.datasource.url=jdbc:mysql://127.0.0.1:3306/old_db\nserver.port=8080',
 
+        linechart: 'date,value,series\n2026-01-01,10,A\n2026-01-02,15,A\n2026-01-03,12,A\n2026-01-01,8,B\n2026-01-02,11,B\n2026-01-03,18,B',
+
         jwt: 'jwt token 解码 payload header 过期',
 
         faker: '__auto__',
@@ -77,7 +79,7 @@ logging.level.com.bmt=DEBUG`,
         config: 'config-input', explain: 'explain-input', log: 'log-input',
         jstack: 'jstack-input', maven: 'maven-input', regex: 'regex-text',
         hash: 'hash-input', redis: 'redis-input', encode: 'url-input',
-        dotenv: 'dotenv-input', textdiff: 'textdiff-left',
+        dotenv: 'dotenv-input', textdiff: 'textdiff-left', linechart: 'linechart-input',
         cron: 'cron-input', uuid: 'uuid-count', timestamp: 'ts-input',
         jwt: 'jwt-panel-input'
     };

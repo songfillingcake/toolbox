@@ -47,6 +47,7 @@ const DevKitIcons = (() => {
         empty: '<path d="M3 2.5h10v11H3z" stroke-dasharray="2 2"/><line x1="6" y1="6.5" x2="10" y2="6.5"/><line x1="6" y1="9" x2="10" y2="9"/>',
         dotenv: '<path d="M3 2.5h10v11H3z"/><line x1="5" y1="6" x2="7" y2="6"/><line x1="8.5" y1="6" x2="11" y2="6"/><line x1="5" y1="9.5" x2="11" y2="9.5"/>',
         textdiff: '<line x1="2.5" y1="4" x2="7.5" y2="4"/><line x1="2.5" y1="8" x2="6.5" y2="8"/><line x1="2.5" y1="12" x2="7.5" y2="12"/><line x1="9.5" y1="4" x2="13.5" y2="12"/><line x1="9.5" y1="12" x2="13.5" y2="4"/>',
+        linechart: '<polyline points="2 12 5.5 6 8.5 9 11 4 14 7"/><line x1="2" y1="14" x2="14" y2="14"/>',
         faker: '<circle cx="5.5" cy="5" r="2"/><circle cx="10.5" cy="7" r="2"/><circle cx="7" cy="11.5" r="2"/><line x1="7" y1="6.5" x2="9" y2="8"/><line x1="7.5" y1="9.5" x2="8.5" y2="7.5"/>',
         image: '<rect x="2.5" y="3.5" width="11" height="9" rx="1"/><circle cx="5.5" cy="6.5" r="1"/><path d="M2.5 11l2.5-2 2 1.5 2.5-2 3.5 3"/>',
         star: '<polygon points="8 2 9.8 6.2 14.5 6.6 11 9.5 12.1 14 8 11.6 3.9 14 5 9.5 1.5 6.6 6.2 6.2"/>',
@@ -83,10 +84,10 @@ const DevKitIcons = (() => {
         'explain-ocr-copy': 'copy', 'explain-ocr-copy-image': 'copy', 'explain-copy-result': 'copy',
         'log-highlight': 'format', 'log-extract-json': 'play', 'jstack-run': 'play',
         'maven-run': 'play', 'mock-gen-run': 'play', 'uuid-gen': 'play',
-        'dotenv-convert': 'play', 'textdiff-run': 'play', 'faker-gen': 'play',
+        'dotenv-convert': 'play', 'textdiff-run': 'play', 'linechart-render': 'play', 'faker-gen': 'play',
         'jwt-panel-parse': 'play', 'jwt-panel-to-json': 'link', 'encode-to-jwt': 'link',
         'dotenv-to-config': 'link', 'faker-to-json': 'link', 'faker-to-mock': 'link',
-        'mybatis-to-explain': 'link'
+        'mybatis-to-explain': 'link', 'linechart-to-json': 'link'
     };
 
     function mountToolbarIcons() {

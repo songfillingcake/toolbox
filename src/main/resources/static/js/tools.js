@@ -170,6 +170,7 @@ initMockGen();
 initCronGen();
 initTsGoGen();
 initTextDiff();
+initLineChart();
 initDotenvPro();
 initFakeData();
 initJwtPro();
@@ -180,7 +181,7 @@ initCommandPalette();
     initEmptyStates();
     ProCommon.initTheme();
     ProCommon.initWorkspace();
-    ProCommon.initDragDrop(['mybatis-input', 'sql-input', 'json-input', 'config-input', 'log-input', 'explain-input', 'jstack-input', 'maven-input', 'dotenv-input', 'textdiff-left', 'textdiff-right']);
+    ProCommon.initDragDrop(['mybatis-input', 'sql-input', 'json-input', 'config-input', 'log-input', 'explain-input', 'jstack-input', 'maven-input', 'dotenv-input', 'textdiff-left', 'textdiff-right', 'linechart-input']);
     ProCommon.initResizer('json-resizer', '#json-pane-left', '#json-pane-right');
 
     document.getElementById('cmd-palette-open')?.addEventListener('click', () => CommandPalette.open());

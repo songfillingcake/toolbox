@@ -9,7 +9,7 @@ const Nav = (() => {
     const MAX_PINS = 6;
 
     const TAB_GROUP = {
-        mybatis: '基础工具', sql: '基础工具', cron: '基础工具', timestamp: '基础工具', uuid: '基础工具', textdiff: '基础工具',
+        mybatis: '基础工具', sql: '基础工具', cron: '基础工具', timestamp: '基础工具', uuid: '基础工具', textdiff: '基础工具', linechart: '基础工具',
         json: 'Pro 工具', encode: 'Pro 工具', redis: 'Pro 工具', config: 'Pro 工具', regex: 'Pro 工具', hash: 'Pro 工具', jwt: 'Pro 工具', dotenv: 'Pro 工具',
         explain: '开发调试', log: '开发调试', jstack: '开发调试', maven: '开发调试', mock: '开发调试', faker: '开发调试'
     };
@@ -21,6 +21,7 @@ const Nav = (() => {
         timestamp: { label: '时间戳转换' },
         uuid: { label: 'UUID 生成' },
         textdiff: { label: '文本 Diff' },
+        linechart: { label: '折线图' },
         json: { label: 'JSON Pro' },
         encode: { label: '编码 Pro' },
         redis: { label: 'Redis Pro' },
@@ -44,6 +45,7 @@ const Nav = (() => {
         timestamp: '时间戳 日期 unix',
         uuid: 'uuid guid 唯一',
         textdiff: 'diff 对比 文本 配置 patch 差异',
+        linechart: '折线图 chart 图表 曲线 csv 数据可视化',
         json: 'json 格式化 校验',
         encode: 'base64 url jwt 编码 解码',
         redis: 'redis 命令',
